@@ -1,5 +1,6 @@
 from models import BaseEntity, Usuario, obra, Emprestimo
 from datetime import datetime, timedelta
+from database import salvar_emprestimo, registrar_devolucao
 from rich.table import Table, Console
 
 class Acervo:
@@ -41,10 +42,12 @@ class Acervo:
 
         self.usuarios.add(usuario)
         self.historico_emprestimos.append(emprestimo)
+        salvar_emprestimo(emprestimo)
         return emprestimo
     
     def devolver(self, emprestimo, data_dev):
         emprestimo.marcar_devolucao(data_dev)
+        registrar_devolucao(emprestimo.id, data_dev)
         self += emprestimo.obra
 
     def valor_multa(self, emprestimo, data_ref):
