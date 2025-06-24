@@ -5,6 +5,8 @@ from rich.table import Table, Console
 class Acervo:
     def __init__(self):
         self.acervo = {} #dicionario: {Obra: qtd_disponivel}
+        self.usuarios = set() #lista de usuários com emprestimos
+        self.historico_emprestimos = []
     
     def __iadd__(self, obra):
         if obra in self.acervo:
@@ -36,6 +38,9 @@ class Acervo:
         data_emprestimo = datetime.now().date()
         data_prev_dev = data_emprestimo + timedelta(days=dias)
         emprestimo = Emprestimo(obra=obra, usuario=usuario, data_emprestimo=data_emprestimo, data_prev_dev=data_prev_dev)
+
+        self.usuarios.add(usuario)
+        self.historico_emprestimos.append(emprestimo)
         return emprestimo
     
     def devolver(self, emprestimo, data_dev):
@@ -51,13 +56,12 @@ class Acervo:
             emprestimo.usuario.divida += valor_total
 
     def relatorio_inventario(self):
-
-        console = Console()
-
         table = Table(title="Todos os Livros", show_lines=True)
+
         for col in ("id", "Título", "Autor", "Ano", "Categoria", "Quantidade"):
             table.add_column(col, style="cyan", justify="center")
-        for obra, quantidade in self.acervo.items():
+
+        for obra in self.acervo.items():
             table.add_row(
                 str(obra.id),
                 obra.titulo,
@@ -68,5 +72,44 @@ class Acervo:
             )
 
         return table
+    
+    def relatorio_debitos(self):
+        table = Table(title='Débitos de usuários', show_lines=True)
+
+        for col in ("id", "Nome", "Email", "Dívida"):
+            table.add_column(col, style="cyan", justify="center")
+
+        for usuario in self.usuarios:
+            if usuario.divida > 0:
+                table.add_row(
+                    usuario.id,
+                    usuario.nome,
+                    usuario.email,
+                    f"{usuario.divida:.2f}"
+                )
+
+        return table
+    
+    def historico_usuario(self, usuario):
+        table = Table(title=f"Histórico de Empréstimos - {usuario.nome}")
+
+        for col in ("Título da Obra", "Empréstimo", "Previsão", "Devolução", "Status"):
+            table.add_column(col, style="cyan", justify="center")
+
+        for emprestimo in self.historico_emprestimos:
+            if emprestimo.usuario == usuario:
+                data_dev = getattr(emprestimo, "data_devolucao", None)
+                status = "Devolvido" if data_dev else "Em andamento"
+                table.add_row(
+                    emprestimo.obra.titulo,
+                    str(emprestimo.data_emprestimo),
+                    str(emprestimo.previsao),
+                    str(data_dev) if data_dev else "-",
+                    status
+                )
+
+        return table
+
+
         
     
