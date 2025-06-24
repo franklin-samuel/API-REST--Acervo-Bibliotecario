@@ -41,5 +41,8 @@ class Acervo:
         self += emprestimo.obra
 
     def valor_multa(self, emprestimo, data_ref):
-        emprestimo.dias_atraso(data_ref)
+        dias_atrasados = emprestimo.dias_atraso(data_ref)
+        user = Usuario
+        user.divida = f"R${dias_atrasados},00"
         
+    

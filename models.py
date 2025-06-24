@@ -33,6 +33,7 @@ class Usuario(BaseEntity):
         super().__init__()
         self.nome = nome
         self.email = email
+        self.divida = 0
     
     def __lt__(self, other):
         return self.nome < other.nome
