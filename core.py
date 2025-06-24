@@ -1,5 +1,8 @@
 from models import BaseEntity, Usuario, obra, Emprestimo
 from datetime import datetime, timedelta
+from database import salvar_emprestimo, registrar_devolucao
+
+
 class Acervo:
     def __init__(self):
         self.acervo = {} #dicionario: {Obra: qtd_disponivel}
@@ -34,10 +37,13 @@ class Acervo:
         data_emprestimo = datetime.now().date()
         data_prev_dev = data_emprestimo + timedelta(days=dias)
         emprestimo = Emprestimo(obra=obra, usuario=usuario, data_emprestimo=data_emprestimo, data_prev_dev=data_prev_dev)
+
+        salvar_emprestimo(emprestimo)
         return emprestimo
     
     def devolver(self, emprestimo, data_dev):
         emprestimo.marcar_devolucao(data_dev)
+        registrar_devolucao(emprestimo.id, data_dev)
         self += emprestimo.obra
 
     def valor_multa(self, emprestimo, data_ref):
