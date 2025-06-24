@@ -35,3 +35,7 @@ class Acervo:
     def devolver(self, emprestimo, data_dev):
         emprestimo.marcar_devolucao = data_dev
         self += emprestimo.obra
+
+    def valor_multa(self, emprestimo, data_ref):
+        emprestimo.dias_atraso(data_ref)
+        
