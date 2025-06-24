@@ -35,5 +35,3 @@ class Acervo:
     def devolver(self, emprestimo, data_dev):
         emprestimo.marcar_devolucao = data_dev
         self += emprestimo.obra
-
-    
