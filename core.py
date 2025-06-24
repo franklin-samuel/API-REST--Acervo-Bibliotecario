@@ -1,7 +1,7 @@
 from models import BaseEntity, Usuario, obra, Emprestimo
 from datetime import datetime, timedelta
 from database import salvar_emprestimo, registrar_devolucao
-
+from rich.table import Table, Console
 
 class Acervo:
     def __init__(self):
@@ -48,7 +48,29 @@ class Acervo:
 
     def valor_multa(self, emprestimo, data_ref):
         dias_atrasados = emprestimo.dias_atraso(data_ref)
-        user = Usuario
-        user.divida = f"R${dias_atrasados},00"
+        multa_por_dia = 1
+        valor_total = dias_atrasados * multa_por_dia
+
+        if valor_total > 0:
+            emprestimo.usuario.divida += valor_total
+
+    def relatorio_inventario(self):
+
+        console = Console()
+
+        table = Table(title="Todos os Livros", show_lines=True)
+        for col in ("id", "Título", "Autor", "Ano", "Categoria", "Quantidade"):
+            table.add_column(col, style="cyan", justify="center")
+        for obra, quantidade in self.acervo.items():
+            table.add_row(
+                str(obra.id),
+                obra.titulo,
+                obra.autor,
+                str(obra.ano),
+                obra.categoria,
+                str(obra.quantidade)
+            )
+
+        return table
         
     
