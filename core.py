@@ -21,5 +21,13 @@ class Acervo:
     def adicionar(self, obra): 
         self += obra
 
-    def remover (self, obra):
+    def remover(self, obra):
         self -= obra
+
+    def emprestar(self, obra, usuario, dias = 7):
+        if obra not in self.acervo or self.acervo[obra] == 0:
+            raise ValueError(f"A obra {obra} não está disponível no acervo.")
+        
+        self -= obra
+        emprestimo = Emprestimo(obra=obra, usuario=usuario, dias=dias)
+        return emprestimo
