@@ -18,3 +18,8 @@ class Acervo:
             else:
                 self.acervo.remove(obra)
         return Acervo
+    def adicionar(self, obra): 
+        self += obra
+
+    def remover (self, obra):
+        self -= obra
