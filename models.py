@@ -58,7 +58,7 @@ class Emprestimo(BaseEntity):
     
     def dias_atraso(self, data_ref):
         if data_ref > (self.previsao):
-            return (data_ref - int(self.previsao)).days
+            return (data_ref - self.previsao).days
         return 0
         
     def __str__(self):

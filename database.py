@@ -22,7 +22,7 @@ def criar_tabelas():
         autor TEXT NOT NULL,
         ano INTEGER,
         categoria TEXT,
-        quantidade INTEGER,  
+        quantidade INTEGER  
     )
     """)
 
@@ -67,12 +67,14 @@ def salvar_emprestimo(emprestimo):
         INSERT INTO emprestimos (id, obra_id, usuario_id, data_emprestimo, data_prevista, data_devolucao)
                    values (?, ?, ?, ?, ?, ?)
         """,
-        str(emprestimo.id),
-        str(emprestimo.obra.id),
-        str(emprestimo.usuario.id),
-        emprestimo.data_emprestimo.isoformat(),
-        emprestimo.previsao.isoformat(),
-        getattr(emprestimo, 'data_devolucao', None)
+        (
+            str(emprestimo.id),
+            str(emprestimo.obra.id),
+            str(emprestimo.usuario.id),
+            emprestimo.data_emprestimo.isoformat(),
+            emprestimo.previsao.isoformat(),
+            getattr(emprestimo, 'data_devolucao', None)
+        )
     )
     conn.commit()
     conn.close()
@@ -83,6 +85,6 @@ def registrar_devolucao(emprestimo_id, data_devolucao):
     cursor.execute("""
         UPDATE emprestimos SET data_devolucao = ?
         WHERE id = ?
-    """, (data_devolucao.isoformat(), emprestimo_id))
+    """, (data_devolucao.isoformat(), str(emprestimo_id)))
     conn.commit()
     conn.close()

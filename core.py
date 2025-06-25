@@ -1,6 +1,6 @@
 from models import BaseEntity, Usuario, Obra, Emprestimo
 from datetime import datetime, timedelta
-from database import salvar_emprestimo, registrar_devolucao
+from database import salvar_emprestimo, registrar_devolucao, salvar_usuario
 from rich.table import Table
 
 class Acervo:
@@ -67,6 +67,9 @@ class Acervo:
 
         if valor_total > 0:
             emprestimo.usuario.divida += valor_total
+            salvar_usuario(emprestimo.usuario)
+        
+        return float(valor_total)
 
     def relatorio_inventario(self):
         builder = self._relatorio_builder("Todos os Livros")
@@ -136,7 +139,7 @@ class Acervo:
         return builder.build()
 
     def __valida_obra(self, obra):
-        from models import obra as ObraClass
+        from models import Obra as ObraClass
         if not isinstance(obra, ObraClass):
             raise TypeError(f'Esperado tipo obra, mas recebeu {type(obra).__name__}.')
 
