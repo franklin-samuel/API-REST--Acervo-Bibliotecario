@@ -1,7 +1,7 @@
-from models import BaseEntity, Usuario, obra, Emprestimo
+from models import BaseEntity, Usuario, Obra, Emprestimo
 from datetime import datetime, timedelta
 from database import salvar_emprestimo, registrar_devolucao
-from rich.table import Table, Console
+from rich.table import Table
 
 class Acervo:
     def __init__(self):
