@@ -57,7 +57,7 @@ from core import Acervo
 from models import Obra, Usuario
 from datetime import date, timedelta, datetime
 from unittest.mock import patch
-from database import criar_tabelas
+from database import criar_tabelas, limpar_tabelas
 
 def test_fluxo_emprestimo_com_mock():
     with patch("database.salvar_obra") as mock_salvar_obra, \

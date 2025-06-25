@@ -53,10 +53,17 @@ def salvar_usuario(usuario):
 def salvar_obra(obra):
     conn = conectar()
     cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO obras (id, titulo, autor, ano, categoria, quantidade)
-        values (?, ?, ?, ?, ?, ?)
-        """, (str(obra.id), obra.titulo, obra.autor, obra.ano, obra.categoria, obra.quantidade))
+    cursor.execute("SELECT quantidade FROM obras WHERE id = ?", (str(obra.id)),)
+    resultado = cursor.fetchone()
+
+    if resultado:
+        novo_quantidade = resultado[0] + obra.quantidade
+        cursor.execute("UPDATE obras set quantidade = ? WHERE id = ?", (novo_quantidade, (str(obra.id))))
+    else:
+        cursor.execute("""
+            INSERT INTO obras (id, titulo, autor, ano, categoria, quantidade)
+            values (?, ?, ?, ?, ?, ?)
+            """, (str(obra.id), obra.titulo, obra.autor, obra.ano, obra.categoria, obra.quantidade))
     conn.commit()
     conn.close()
 
@@ -86,5 +93,16 @@ def registrar_devolucao(emprestimo_id, data_devolucao):
         UPDATE emprestimos SET data_devolucao = ?
         WHERE id = ?
     """, (data_devolucao.isoformat(), str(emprestimo_id)))
+    conn.commit()
+    conn.close()
+
+def limpar_tabelas():
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM usuarios")
+    cursor.execute("DELETE FROM obras")
+    cursor.execute("DELETE FROM emprestimos")
+
     conn.commit()
     conn.close()
