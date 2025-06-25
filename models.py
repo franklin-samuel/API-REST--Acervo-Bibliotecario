@@ -8,6 +8,9 @@ class BaseEntity:
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.id == other.id
+    
+    def __hash__(self):
+        return hash(self.id)
 
     def _gerar_id(self):
         return uuid.uuid4()
