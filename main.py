@@ -1,14 +1,15 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from uuid import UUID
 from core import Acervo
 from models import Usuario, Obra
 from datetime import date, datetime, timedelta
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 app = FastAPI()
 acervo = Acervo()
 
+#------Models Input------
 class ObraInput(BaseModel):
     titulo: str
     autor: str
@@ -16,16 +17,23 @@ class ObraInput(BaseModel):
     categoria: str
     quantidade: int = 1
 
-@app.post("/obras/")
-def criar_obra(obra: ObraInput):
-    nova_obra = Obra(titulo = obra.titulo, autor = obra.autor, ano = obra.ano, categoria = obra.categoria, quantidade = obra.quantidade)
-
-    acervo.adicionar(nova_obra)
-
-
 class UsuarioInput(BaseModel):
     nome: str
     email: str
+
+class EmprestimoInput(BaseModel):
+    id_usuario: UUID
+    id_obra: UUID
+    dias: int = 7
+
+class DevolucaoInput(BaseModel):
+    emprestimo_id: UUID
+    data_devolucao: Optional[date] = None
+
+@app.post("/obras/")
+def criar_obra(obra: ObraInput):
+    nova_obra = Obra(titulo = obra.titulo, autor = obra.autor, ano = obra.ano, categoria = obra.categoria, quantidade = obra.quantidade)
+    acervo.adicionar(nova_obra)
 
 @app.post("/usuarios/")
 def criar_usuario(usuario: UsuarioInput):
@@ -39,55 +47,28 @@ def criar_usuario(usuario: UsuarioInput):
         "divida": novo_usuario.divida
     }
 
-class EmprestimoInput(BaseModel):
-    id_usuario: UUID
-    id_obra: UUID
-    dias: int = 7
 
 @app.post("/emprestar/")
 def emprestar_obra(dados: EmprestimoInput):
-    usuario = next((user for user in acervo.usuarios if user.id == dados.id_usuario), None)
-    if not usuario:
-        return {"erro": "Usuário não encontrado"}
-    
-
-    obra = next((ob for ob in acervo.acervo if ob.id == dados.id_obra), None)
-    if not obra:
-        return {"erro": "Obra não encontrada"}
-    
     try:
-        emprestimo = acervo.emprestar(obra, usuario, dias=dados.dias)
+        emprestimo = acervo.emprestar_por_id(id_obra=dados.id_obra, id_usuario=dados.id_usuario, dias=dados.dias)
+
     except ValueError as e:
-        return {"erro": str(e)
-     
-    }
-
-    return {
-        "emprestimo_id": str(emprestimo.id),
-        "usuario": usuario.nome,
-        "data_emprestimo": str(emprestimo.data_emprestimo),
-        "previsao_devolucao": str(emprestimo.previsao)
-    }
-
-class DevolucaoInput(BaseModel):
-    emprestimo_id: UUID
-    data_devolucao: Optional[date] = None
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/devolver/")
 def devolver_obra(dados: DevolucaoInput):
-    emprestimo = next((emp for emp in acervo.historico_emprestimos if emp.id == dados.emprestimo_id), None)
-
+    emprestimo = acervo.devolver_por_id(dados.emprestimo_id, dados.data_devolucao)
     if not emprestimo:
-        return {"erro": "Empréstimo não encontrado"}
+        raise HTTPException(status_code=404, detail="Empréstimo não encontrado")
     
-    data_dev = dados.data_devolucao or date.today()
-
-    acervo.devolver(emprestimo, data_dev)
-
     return {
         "mensagem": "Obra devolvida com sucesso!",
         "obra": emprestimo.obra.titulo,
         "usuario": emprestimo.usuario.nome,
-        "data_devolucao": str(data_dev)
+        "data_devolucao": str(dados.data_devolucao or date.today())
     }
 
+@app.get("/obras/")
+def listar_obras():
+    return acervo.listar_obras()
