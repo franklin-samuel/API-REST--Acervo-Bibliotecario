@@ -1,6 +1,6 @@
 from models import BaseEntity, Usuario, Obra, Emprestimo
 from datetime import datetime, timedelta
-from database import salvar_emprestimo, registrar_devolucao, salvar_usuario
+from database import salvar_emprestimo, registrar_devolucao, salvar_usuario, salvar_obra
 from rich.table import Table
 
 class Acervo:
@@ -29,6 +29,7 @@ class Acervo:
     def adicionar(self, obra):
         self.__valida_obra(obra)
         self += obra
+        salvar_obra(obra)
 
     def remover(self, obra):
         self.__valida_obra(obra)

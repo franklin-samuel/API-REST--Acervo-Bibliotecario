@@ -4,9 +4,24 @@ from core import Acervo
 from models import Usuario, Obra
 from datetime import date, datetime, timedelta
 from pydantic import BaseModel
+from typing import Optional
 
 app = FastAPI()
 acervo = Acervo()
+
+class ObraInput(BaseModel):
+    titulo: str
+    autor: str
+    ano: int
+    categoria: str
+    quantidade: int = 1
+
+@app.post("/obras/")
+def criar_obra(obra: ObraInput):
+    nova_obra = Obra(titulo = obra.titulo, autor = obra.autor, ano = obra.ano, categoria = obra.categoria, quantidade = obra.quantidade)
+
+    acervo.adicionar(nova_obra)
+
 
 class UsuarioInput(BaseModel):
     nome: str
@@ -52,5 +67,27 @@ def emprestar_obra(dados: EmprestimoInput):
         "usuario": usuario.nome,
         "data_emprestimo": str(emprestimo.data_emprestimo),
         "previsao_devolucao": str(emprestimo.previsao)
+    }
+
+class DevolucaoInput(BaseModel):
+    emprestimo_id: UUID
+    data_devolucao: Optional[date] = None
+
+@app.post("/devolver/")
+def devolver_obra(dados: DevolucaoInput):
+    emprestimo = next((emp for emp in acervo.historico_emprestimos if emp.id == dados.emprestimo_id), None)
+
+    if not emprestimo:
+        return {"erro": "Empréstimo não encontrado"}
+    
+    data_dev = dados.data_devolucao or date.today()
+
+    acervo.devolver(emprestimo, data_dev)
+
+    return {
+        "mensagem": "Obra devolvida com sucesso!",
+        "obra": emprestimo.obra.titulo,
+        "usuario": emprestimo.usuario.nome,
+        "data_devolucao": str(data_dev)
     }
 
