@@ -1,6 +1,12 @@
+<<<<<<< Updated upstream
 from models import BaseEntity, Usuario, Obra, Emprestimo
 from datetime import datetime, timedelta, date
 from database import salvar_emprestimo, registrar_devolucao, salvar_usuario, salvar_obra
+=======
+from models import Emprestimo, Obra, Usuario
+from datetime import datetime, timedelta
+from database import salvar_emprestimo, registrar_devolucao
+>>>>>>> Stashed changes
 from rich.table import Table
 
 
