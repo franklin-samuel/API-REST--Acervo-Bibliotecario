@@ -53,7 +53,7 @@ def salvar_usuario(usuario):
 def salvar_obra(obra):
     conn = conectar()
     cursor = conn.cursor()
-    cursor.execute("SELECT quantidade FROM obras WHERE id = ?", (str(obra.id)),)
+    cursor.execute("SELECT quantidade FROM obras WHERE id = ?", (str(obra.id),))
     resultado = cursor.fetchone()
 
     if resultado:

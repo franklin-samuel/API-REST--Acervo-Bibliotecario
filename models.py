@@ -3,7 +3,7 @@ from datetime import datetime
 
 class BaseEntity:
     def __init__(self):
-        self.id = uuid.uuid4()
+        self.id = self._gerar_id()
         self.data_criacao = datetime.now()
 
     def __eq__(self, other):
@@ -11,7 +11,7 @@ class BaseEntity:
     
     def __hash__(self):
         return hash(self.id)
-
+    
     def _gerar_id(self):
         return uuid.uuid4()
     
