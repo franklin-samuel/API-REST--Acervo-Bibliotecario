@@ -31,7 +31,6 @@ with patch("database.salvar_obra") as mock_salvar_obra, \
     after3 = date.today() + timedelta(days=3)
     print("Multa:", acervo.valor_multa(emp, after3))
 
-<<<<<<< Updated upstream
 def test_valor_multa_atraso(acervo, obra, usuario):
     acervo.adicionar(obra)
     emprestimo = acervo.emprestar(obra, usuario)
@@ -76,11 +75,3 @@ def test_fluxo_emprestimo_com_mock():
         assert mock_salvar_obra.called
         assert mock_salvar_usuario.called
         assert mock_salvar_emprestimo.called
-=======
-    print(acervo.relatorio_inventario())
-
-    # Opcional: você pode checar quantas vezes foram chamadas
-    print("salvar_obra chamada:", mock_salvar_obra.call_count)
-    print("salvar_usuario chamada:", mock_salvar_usuario.call_count)
-    print("salvar_emprestimo chamada:", mock_salvar_emprestimo.call_count)
->>>>>>> Stashed changes
