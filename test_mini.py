@@ -1,9 +1,6 @@
-<<<<<<< Updated upstream
 """import pytest
 from datetime import datetime, timedelta
 from models import Usuario, Obra, Emprestimo
-=======
->>>>>>> Stashed changes
 from core import Acervo
 from models import Obra, Usuario
 from datetime import date, timedelta
