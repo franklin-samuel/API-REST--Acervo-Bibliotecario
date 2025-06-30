@@ -32,11 +32,11 @@ class Obra(BaseEntity):
         return f"{self.titulo} ({self.ano})"
 
 class Usuario(BaseEntity):
-    def __init__(self, nome, email):
+    def __init__(self, nome, email, divida=0):
         super().__init__()
         self.nome = nome
         self.email = email
-        self.divida = 0
+        self.divida = divida
     
     def __lt__(self, other):
         return self.nome < other.nome

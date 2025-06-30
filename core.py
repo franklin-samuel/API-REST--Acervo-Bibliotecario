@@ -1,57 +1,66 @@
 from models import BaseEntity, Usuario, Obra, Emprestimo
 from datetime import datetime, timedelta, date
-from database import salvar_emprestimo, registrar_devolucao, salvar_usuario, salvar_obra
+from database import salvar_emprestimo, registrar_devolucao, salvar_usuario, salvar_obra, atualizar_quantidade_obra, buscar_obra, buscar_usuario, listar_todas_obras, buscar_emprestimo, listar_usuarios_com_divida, buscar_emprestimos_por_usuario
 from rich import Table
+import uuid
 
 
 class Acervo:
     def __init__(self):
-        self.acervo = {}  # dicionário: {Obra: qtd_disponivel}
-        self.usuarios = set() # set: lista de usuários
-        self.historico_emprestimos = [] # lista de emprestimos de um usuário
+        pass
 
     def __iadd__(self, obra):
-        if obra in self.acervo:
-            self.acervo[obra] += 1
-        else:
-            self.acervo[obra] = 1
+        self.__valida_obra(obra)
+        salvar_obra(obra)
         return self
 
     def __isub__(self, obra):
-        if obra in self.acervo:
-            if self.acervo[obra] > 1:
-                self.acervo[obra] -= 1
-            else:
-                del self.acervo[obra]
-        else:
-            raise ValueError(f"A obra {obra} não está no acervo")
+        self.__valida_obra(obra)
+        atualizar_quantidade_obra(obra.id, -1)
         return self
     
     #add/remove
     def adicionar(self, obra):
         self.__valida_obra(obra)
         self += obra
-        salvar_obra(obra)
 
     def remover(self, obra):
         self.__valida_obra(obra)
         self -= obra
-
     #Busca
     def encontrar_usuario(self, id_usuario):
-        return next((u for u in self.usuarios if u.id == id_usuario), None)
-
+        row = buscar_usuario(id_usuario)
+        if row:
+            usuario = Usuario(row[1], row[2], row[3])
+            usuario.id = uuid.UUID(row[0])
+            return usuario
+        return None
+        
     def encontrar_obra(self, id_obra):
-        return next((o for o in self.acervo if o.id == id_obra), None)
+        row = buscar_obra(id_obra)
+        if row:
+            obra = Obra(row[1], row[2], row[3], row[4], row[5])
+            obra.id = uuid.UUID(row[0])
+            return obra
+        return None
     
+    def encontrar_emprestimo(self, id_emprestimo):
+        row = buscar_emprestimo(id_emprestimo)
+        if row:
+            emprestimo = Emprestimo(row[1], row[2], row[3], row[4])
+            emprestimo.id = uuid.UUID(row[0])
+            return emprestimo
+        return None
     #Emprestar
     def emprestar(self, obra, usuario, dias=7):
         self.__valida_obra(obra)
 
-        if obra not in self.acervo:
-            raise ValueError(f"A obra {obra} não está disponível no acervo.")
+        row = buscar_obra(obra.id)
+        if not row or row[5] <= 0:
+            raise ValueError("Obra não tem estoque disponível, tente outra.")
 
-        self -= obra
+        atualizar_quantidade_obra(obra.id, -1)
+
         data_emprestimo = datetime.now().date()
         data_prev_dev = data_emprestimo + timedelta(days=dias)
         emprestimo = Emprestimo(
@@ -61,8 +70,6 @@ class Acervo:
             data_prev_dev=data_prev_dev
         )
 
-        self.usuarios.add(usuario)
-        self.historico_emprestimos.append(emprestimo)
         salvar_emprestimo(emprestimo)
         return emprestimo
     
@@ -82,7 +89,7 @@ class Acervo:
         self += emprestimo.obra
     
     def devolver_por_id(self, id_emprestimo, data_devolucao=None):
-        emprestimo = next((e for e in self.historico_emprestimos if e.id == id_emprestimo), None)
+        emprestimo = self.encontrar_emprestimo(id_emprestimo)
 
         if not emprestimo:
             return None
@@ -104,17 +111,17 @@ class Acervo:
     
     #Listar Obras
     def listar_obras(self):
+        rows = listar_todas_obras()
         obras = []
-        for obra, quantidade in self.acervo.items():
+        for row in rows:
             obras.append({
-                "id": str(obra.id),
-                "titulo": obra.titulo,
-                "autor": obra.autor,
-                "ano": obra.ano,
-                "categoria": obra.categoria,
-                "quantidade": quantidade
+                "id": row[0],
+                "titulo": row[1],
+                "autor": row[2],
+                "ano": row[3],
+                "categoria": row[4],
+                "quantidade": row[5]
             })
-
         return obras
 
     def relatorio_inventario(self):
@@ -128,16 +135,16 @@ class Acervo:
             ("Quantidade", "bold yellow", "center")
         )
 
-        for obra, quantidade in self.acervo.items():
+        rows = listar_todas_obras()
+        for row in rows:
             builder.add_linha(
-                str(obra.id),
-                obra.titulo,
-                obra.autor,
-                str(obra.ano),
-                obra.categoria,
-                str(quantidade)
-            )
-
+            row[0],  
+            row[1],  
+            row[2],  
+            str(row[3]), 
+            row[4], 
+            str(row[5])   
+        )
         return builder.build()
 
     def relatorio_debitos(self):
@@ -149,14 +156,14 @@ class Acervo:
             ("Dívida (R$)", "bold red", "center")
         )
 
-        for usuario in self.usuarios:
-            if usuario.divida > 0:
-                builder.add_linha(
-                    str(usuario.id),
-                    usuario.nome,
-                    usuario.email,
-                    f"{usuario.divida:.2f}"
-                )
+        rows = listar_usuarios_com_divida()
+        for row in rows:
+            builder.add_linha(
+                row[0],
+                row[1],
+                row[2],
+                row[3]
+            )
 
         return builder.build()
 
@@ -170,20 +177,23 @@ class Acervo:
             ("Status", "green", "center")
         )
 
-        for emprestimo in self.historico_emprestimos:
-            if emprestimo.usuario == usuario:
-                data_dev = getattr(emprestimo, "data_devolucao", None)
-                status = "Devolvido" if data_dev else "Em andamento"
-                builder.add_linha(
-                    emprestimo.obra.titulo,
-                    str(emprestimo.data_emprestimo),
-                    str(emprestimo.previsao),
-                    str(data_dev) if data_dev else "-",
-                    status
-                )
+        emprestimos = buscar_emprestimos_por_usuario(usuario.id)  
+        for row in emprestimos:
+            titulo_obra = row[5]
+            data_emp = row[2]
+            previsao = row[3]
+            data_dev = row[4]
+            status = "Devolvido" if data_dev else "Em andamento"
+
+        builder.add_linha(
+            titulo_obra,
+            str(data_emp),
+            str(previsao),
+            str(data_dev) if data_dev else "-",
+            status
+        )
 
         return builder.build()
-
     def __valida_obra(self, obra):
         from models import Obra as ObraClass
         if not isinstance(obra, ObraClass):
