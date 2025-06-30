@@ -1,5 +1,4 @@
 Ainda precisa arrumar o banco de dados
-1- corrigir erro de adicionar uma a mais, esta criando um novo objeto no banco de dados e nao adicionando mais uma obra
 
 2-  Carregar dados do banco de dados ao invés de manter listas em memória
 Substituir:

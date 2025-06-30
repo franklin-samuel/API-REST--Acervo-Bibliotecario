@@ -1,12 +1,7 @@
-<<<<<<< Updated upstream
 """import pytest
 from datetime import datetime, timedelta
 from models import Usuario, Obra, Emprestimo
-=======
->>>>>>> Stashed changes
 from core import Acervo
-from models import Obra, Usuario
-from datetime import date, timedelta
 from unittest.mock import patch
 
 with patch("database.salvar_obra") as mock_salvar_obra, \
@@ -40,7 +35,7 @@ def test_valor_multa_atraso(acervo, obra, usuario):
 
 from core import Acervo
 from models import Obra, Usuario
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta
 from unittest.mock import patch
 from database import criar_tabelas, limpar_tabelas
 
