@@ -6,7 +6,7 @@ from rich.table import Table
 
 class Acervo:
     def __init__(self):
-        self.acervo = {}  # dicionário: {Obra: qtd_disponivel}
+        self.acervo = {}  # dicionário: {Obra: qtd_disponivel} // Trocar Obra by Obra.id
         self.usuarios = set() # set: lista de usuários
         self.historico_emprestimos = [] # lista de emprestimos de um usuário
 
