@@ -1,5 +1,6 @@
 from models import Usuario, Obra
 from core import Acervo
+from database import salvar_usuario
 from datetime import date
 import time
 
