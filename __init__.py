@@ -1,6 +1,6 @@
 from models import Usuario, Obra
 from core import Acervo
-from database import salvar_usuario
+from database import salvar_usuario, salvar_emprestimo
 from datetime import date
 import time
 
@@ -21,7 +21,8 @@ def executar_demo():
     emprestimo = acervo.emprestar(obra, usuario, dias=3)
     print(f"\nObra emprestada: {emprestimo.obra.titulo} para {emprestimo.usuario.nome}")
     print(f"Previsão de devolução: {emprestimo.previsao}")
-
+    salvar_emprestimo(emprestimo)
+    
     #buscar os dados
     usuario_encontrado = acervo.encontrar_usuario(str(usuario.id))
     obra_encontrada = acervo.encontrar_obra(str(obra.id))
