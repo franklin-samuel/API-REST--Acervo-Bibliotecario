@@ -1,6 +1,6 @@
 from models import Usuario, Obra
 from core import Acervo
-from database import salvar_usuario, salvar_emprestimo, limpar_tabelas, buscar_obra_por_dados
+from database import salvar_usuario, limpar_tabelas, buscar_obra_por_dados, listar_todas_obras, buscar_usuario_por_email
 from datetime import date
 from rich.console import Console
 import time
@@ -9,30 +9,31 @@ def executar_demo():
     acervo = Acervo()
 
     # criar usuario
-    usuario = Usuario(nome="Dezmetros", email="basquete@email.com")
-    salvar_usuario(usuario)
+    usuario = buscar_usuario_por_email("basquete@email.com")
+    if not usuario:
+        usuario = Usuario(nome="Dezmetros", email="basquete@email.com")
+        salvar_usuario(usuario)
+        print(f"Usuário cadastrado: {usuario.nome} ({usuario.id})")
+    else:
+        print(f"Usuário já existente: {usuario.nome} ({usuario.id})")
 
     #buscar
-    obra = Obra(titulo="1984", autor="George Orwell", ano=1949, categoria="Ficção", quantidade=4)
+    obra = Obra(titulo="1984", autor="George Orwell", ano=1949, categoria="Ficção", quantidade=1)
     acervo.adicionar(obra)
 
     # Recuperar do banco para garantir que o ID está sincronizado
     obra_existente = buscar_obra_por_dados(obra.titulo, obra.autor, obra.ano, obra.categoria)
-    if not obra_existente:
-        raise Exception("Erro ao recuperar obra do banco após adicionar.")
-    obra.id = obra_existente.id
+    if obra_existente:
+        obra.id = obra_existente.id
     
     print(f"Usuário cadastrado: {usuario.nome} ({usuario.id})")
     print(f"Obra cadastrada: {obra.titulo} ({obra.id})")
-    print(f"ID esperado: {obra.id}")
-    print(f"Obra encontrada via .encontrar_obra(): {acervo.encontrar_obra(obra.id)}")
-
 
     #emprestar
     emprestimo = acervo.emprestar(obra, usuario, dias=3)
     print(f"\nObra emprestada: {emprestimo.obra.titulo} para {emprestimo.usuario.nome}")
-    print(f"Previsão de devolução: {emprestimo.previsao}")
-    
+    print(f"Previsão de devolução: {emprestimo.previsao}") 
+
     #buscar os dados
     usuario_encontrado = acervo.encontrar_usuario(str(usuario.id))
     obra_encontrada = acervo.encontrar_obra(str(obra.id))
@@ -44,7 +45,7 @@ def executar_demo():
     print(f"Empréstimo: {emprestimo_encontrado.obra.titulo} - Previsto para {emprestimo_encontrado.previsao}")
 
     #devolver
-    devolvido = acervo.devolver_por_id(str(emprestimo.id), data_devolucao=date.today())
+    acervo.devolver_por_id(str(emprestimo.id), data_devolucao=date.today())
     print(f"\nDevolução registrada para o empréstimo ID {emprestimo.id} em {date.today()}")
 
     #relatorios

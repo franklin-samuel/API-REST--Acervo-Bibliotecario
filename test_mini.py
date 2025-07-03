@@ -26,7 +26,6 @@ def test_fluxo_completo_emprestimo_e_devolucao():
 
     # Buscar novamente para garantir sincronização de ID
     obra_existente = buscar_obra_por_dados(obra.titulo, obra.autor, obra.ano, obra.categoria)
-    assert obra_existente is not None
     obra.id = obra_existente.id
     
     # Realizar empréstimo

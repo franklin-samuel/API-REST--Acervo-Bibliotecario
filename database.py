@@ -1,5 +1,5 @@
 import sqlite3
-from models import Obra
+from models import Obra, Usuario
 import uuid
 
 def conectar():
@@ -13,7 +13,7 @@ def criar_tabelas():
     CREATE TABLE IF NOT EXISTS usuarios (
         id TEXT PRIMARY KEY,
         nome TEXT NOT NULL,
-        email TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
         divida REAL DEFAULT 0)
     """)
 
@@ -42,15 +42,36 @@ def criar_tabelas():
     conn.commit()
     conn.close()
 
+def atualizar_usuario(usuario_id, nova_divida):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE usuarios
+        SET divida = ?
+        WHERE id = ?
+    """, (nova_divida, str(usuario_id)))
+
+    conn.commit()
+    conn.close()
+
 def salvar_usuario(usuario):
     conn = conectar()
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO usuarios (id, nome, email, divida)
-        values (?, ?, ?, ?)
-        """, (str(usuario.id), usuario.nome, usuario.email, usuario.divida))
+                   INSERT into usuarios (id, nome, email, divida)
+                   values (?, ?, ?, ?)""", (str(usuario.id), usuario.nome, usuario.email, usuario.divida))
     conn.commit()
     conn.close()
+    
+def verificar_ou_criar_usuario(nome, email):
+
+    usuario_existente = buscar_usuario_por_email(email)
+    if usuario_existente:
+        return usuario_existente
+
+    novo_usuario = Usuario(nome=nome, email=email)
+    salvar_usuario(novo_usuario)
+    return novo_usuario
 
 def salvar_obra(obra):
     conn = conectar()
@@ -124,9 +145,22 @@ def atualizar_quantidade_obra(obra_id, delta):
 
     cursor.execute("""
         UPDATE obras
-        SET quantidade = quantidade + ?
+        SET quantidade = ?
         WHERE id = ?
     """, (delta, str(obra_id)))  # delta pode ser positivo ou negativo
+
+    conn.commit()
+    conn.close()
+
+def ajustar_quantidade_obra(obra_id, delta):
+    conn = sqlite3.connect("acervo.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE obras
+        SET quantidade = quantidade + ?
+        WHERE id = ?
+    """, (delta, str(obra_id)))
 
     conn.commit()
     conn.close()
@@ -209,3 +243,26 @@ def buscar_usuario_por_email(email):
     row = cursor.fetchone()
     conn.close()
     return row
+
+def buscar_usuario_por_email(email):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT id, nome, email, divida
+        FROM usuarios
+        WHERE email = ?
+    """, (email,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if row:
+        usuario = Usuario(nome=row[1], email=row[2], divida = row[3], id=row[0])
+        return usuario
+    return None
+
+def remover_emprestimo(emprestimo_id):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM emprestimos WHERE id = ?", (str(emprestimo_id),))
+    conn.commit()
+    conn.close()

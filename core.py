@@ -1,9 +1,9 @@
 from models import BaseEntity, Usuario, Obra, Emprestimo
 from datetime import datetime, timedelta, date
 from database import (
-    salvar_emprestimo, registrar_devolucao, salvar_usuario, salvar_obra,
+    salvar_emprestimo, registrar_devolucao, atualizar_usuario, salvar_obra,
     atualizar_quantidade_obra, buscar_obra, buscar_usuario, listar_todas_obras,
-    buscar_emprestimo, listar_usuarios_com_divida, buscar_emprestimos_por_usuario, buscar_obra_por_dados
+    buscar_emprestimo, listar_usuarios_com_divida, buscar_emprestimos_por_usuario, buscar_obra_por_dados, ajustar_quantidade_obra
 )
 from rich.table import Table
 import uuid
@@ -30,8 +30,9 @@ class Acervo:
         self.__valida_obra(obra)
         obra_existente = buscar_obra_por_dados(obra.titulo, obra.autor, obra.ano, obra.categoria)
 
-        if obra_existente:
-            atualizar_quantidade_obra(obra_existente.id, obra.quantidade)  # ← CORREÇÃO AQUI
+        if obra_existente: #quantidade 2
+            nova_quantidade = obra_existente.quantidade + obra.quantidade
+            atualizar_quantidade_obra(obra_existente.id, nova_quantidade) 
             return self
         else:
             salvar_obra(obra)
@@ -126,7 +127,7 @@ class Acervo:
         elif row.quantidade < 0:
             raise ValueError("Obra não tem estoque, mas existe")
 
-        atualizar_quantidade_obra(obra.id, -1)
+        atualizar_quantidade_obra(obra.id, (row.quantidade - 1))
 
         data_emprestimo = datetime.now().date()
         data_prev_dev = data_emprestimo + timedelta(days=dias)
@@ -167,8 +168,8 @@ class Acervo:
         """
         emprestimo.marcar_devolucao(data_dev)
         registrar_devolucao(emprestimo.id, data_dev)
-        self += emprestimo.obra
-    
+        ajustar_quantidade_obra(emprestimo.obra.id, 1)
+
     def devolver_por_id(self, id_emprestimo, data_devolucao=None):
         """
         Devolve um empréstimo com base no ID.
@@ -183,7 +184,7 @@ class Acervo:
             return None
         
         self.devolver(emprestimo, data_devolucao or date.today())
-        return emprestimo
+        return self
 
     # Multa
     def valor_multa(self, emprestimo, data_ref):
@@ -199,9 +200,10 @@ class Acervo:
         valor_total = dias_atrasados * multa_por_dia
 
         if valor_total > 0:
-            emprestimo.usuario.divida += valor_total
-            salvar_usuario(emprestimo.usuario)
-        
+            nova_divida = emprestimo.usuario.divida + valor_total
+            atualizar_usuario(emprestimo.usuario.id, nova_divida)
+            emprestimo.usuario.divida = nova_divida
+            
         return float(valor_total)
     
     # Listagem
