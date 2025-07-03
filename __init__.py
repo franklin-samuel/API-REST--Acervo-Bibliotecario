@@ -46,5 +46,5 @@ def executar_demo():
     print("\n=== Histórico do Usuário ===")
     print(acervo.historico_usuario(usuario))
 
-if __name__ == "__main__":
-    executar_demo()
+
+executar_demo()

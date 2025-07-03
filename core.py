@@ -5,7 +5,7 @@ from database import (
     atualizar_quantidade_obra, buscar_obra, buscar_usuario, listar_todas_obras,
     buscar_emprestimo, listar_usuarios_com_divida, buscar_emprestimos_por_usuario
 )
-from rich import Table
+from rich import table
 import uuid
 
 
@@ -325,7 +325,7 @@ class Acervo:
         """
 
         def __init__(self, titulo):
-            self.tabela = Table(title=titulo, show_lines=True)
+            self.tabela = table(title=titulo, show_lines=True)
 
         def add_colunas(self, *colunas):
             """
