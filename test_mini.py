@@ -1,37 +1,14 @@
-"""import pytest
-from datetime import datetime, timedelta
-from models import Usuario, Obra, Emprestimo
-from core import Acervo
-from unittest.mock import patch
+"""
+Testes para o sistema de empréstimo de obras utilizando mocks para evitar operações reais de banco de dados.
 
-with patch("database.salvar_obra") as mock_salvar_obra, \
-     patch("database.salvar_usuario") as mock_salvar_usuario, \
-     patch("database.salvar_emprestimo") as mock_salvar_emprestimo:
+Este módulo testa o fluxo completo de:
+- Criação de obras e usuários.
+- Empréstimo e devolução de obras.
+- Cálculo de multa em caso de atraso.
+- Verificação de chamadas às funções de persistência.
 
-    acervo = Acervo()
-
-    livro = Obra("POO Essencial", "Ana Silva", 2025, "Livro", 2)
-    joao  = Usuario("João", "joao@example.com")
-
-    # Chama as funções de salvar (mockadas)
-    mock_salvar_obra(livro)
-    mock_salvar_usuario(joao)
-
-    acervo += livro
-
-    emp = acervo.emprestar(livro, joao)
-
-    mock_salvar_emprestimo(emp)
-
-    after3 = date.today() + timedelta(days=3)
-    print("Multa:", acervo.valor_multa(emp, after3))
-
-def test_valor_multa_atraso(acervo, obra, usuario):
-    acervo.adicionar(obra)
-    emprestimo = acervo.emprestar(obra, usuario)
-    data_atrasada = emprestimo.previsao + timedelta(days=3)
-    acervo.valor_multa(emprestimo, data_atrasada)
-    assert usuario.divida == 3"""
+As funções do módulo `database` são mockadas com `unittest.mock.patch` para simular persistência.
+"""
 
 from core import Acervo
 from models import Obra, Usuario
@@ -40,6 +17,24 @@ from unittest.mock import patch
 from database import criar_tabelas, limpar_tabelas
 
 def test_fluxo_emprestimo_com_mock():
+    """
+    Testa o fluxo completo de empréstimo e devolução de uma obra com simulação de persistência.
+
+    O teste realiza as seguintes etapas:
+    1. Cria uma instância do acervo.
+    2. Adiciona uma obra e um usuário (mockando o salvamento).
+    3. Realiza o empréstimo da obra.
+    4. Simula a devolução após 10 dias (3 dias de atraso, considerando o prazo padrão de 7 dias).
+    5. Verifica se a multa está correta.
+    6. Verifica se a obra foi devolvida ao acervo.
+    7. Confirma se os métodos de persistência foram chamados.
+
+    Assegura que:
+    - A multa é corretamente calculada.
+    - A obra é reinserida no acervo após devolução.
+    - Todas as funções de banco foram chamadas.
+    """
+
     with patch("database.salvar_obra") as mock_salvar_obra, \
          patch("database.salvar_usuario") as mock_salvar_usuario, \
          patch("core.salvar_emprestimo") as mock_salvar_emprestimo:
@@ -62,7 +57,6 @@ def test_fluxo_emprestimo_com_mock():
         acervo.devolver(emprestimo, after3)
 
         assert multa == 3.00  # espera multa de 3 reais
-
 
         assert livro in acervo.acervo  # obra deve voltar para o acervo após devolução?
 
