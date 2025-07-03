@@ -3,9 +3,9 @@ from datetime import datetime, timedelta, date
 from database import (
     salvar_emprestimo, registrar_devolucao, salvar_usuario, salvar_obra,
     atualizar_quantidade_obra, buscar_obra, buscar_usuario, listar_todas_obras,
-    buscar_emprestimo, listar_usuarios_com_divida, buscar_emprestimos_por_usuario
+    buscar_emprestimo, listar_usuarios_com_divida, buscar_emprestimos_por_usuario, buscar_obra_por_dados
 )
-from rich import table
+from rich.table import Table
 import uuid
 
 
@@ -28,9 +28,14 @@ class Acervo:
         :return: A instância atual do acervo.
         """
         self.__valida_obra(obra)
-        salvar_obra(obra)
-        return self
+        obra_existente = buscar_obra_por_dados(obra.titulo, obra.autor, obra.ano, obra.categoria)
 
+        if obra_existente:
+            atualizar_quantidade_obra(obra_existente.id, obra.quantidade)  # ← CORREÇÃO AQUI
+            return self
+        else:
+            salvar_obra(obra)
+            return self
     def __isub__(self, obra):
         """
         Remove uma unidade da obra do acervo (opera o -=).
@@ -40,7 +45,12 @@ class Acervo:
         :return: A instância atual do acervo.
         """
         self.__valida_obra(obra)
-        atualizar_quantidade_obra(obra.id, -1)
+        row = buscar_obra(obra.id)
+        if not row:
+            raise ValueError("Obra não encontrada no acervo.")
+
+        nova_quantidade = row[5] - 1
+        atualizar_quantidade_obra(obra.id, nova_quantidade)
         return self
     
     # Adicionar/Remover
@@ -64,8 +74,7 @@ class Acervo:
         """
         row = buscar_usuario(id_usuario)
         if row:
-            usuario = Usuario(row[1], row[2], row[3])
-            usuario.id = uuid.UUID(row[0])
+            usuario = Usuario(row[1], row[2], row[3], id=row[0])
             return usuario
         return None
         
@@ -78,8 +87,7 @@ class Acervo:
         """
         row = buscar_obra(id_obra)
         if row:
-            obra = Obra(row[1], row[2], row[3], row[4], row[5])
-            obra.id = uuid.UUID(row[0])
+            obra = Obra(row[1], row[2], row[3], row[4], row[5], id=row[0])
             return obra
         return None
     
@@ -92,8 +100,11 @@ class Acervo:
         """
         row = buscar_emprestimo(id_emprestimo)
         if row:
-            emprestimo = Emprestimo(row[1], row[2], row[3], row[4])
-            emprestimo.id = uuid.UUID(row[0])
+            obra = self.encontrar_obra(row[1])
+            usuario = self.encontrar_usuario(row[2])
+            emprestimo = Emprestimo(obra, usuario, row[3], row[4], id=row[0])
+            if row[5]:  # data_devolucao
+                emprestimo.marcar_devolucao(row[5])
             return emprestimo
         return None
 
@@ -109,9 +120,11 @@ class Acervo:
         """
         self.__valida_obra(obra)
 
-        row = buscar_obra(obra.id)
-        if not row or row[5] <= 0:
-            raise ValueError("Obra não tem estoque disponível, tente outra.")
+        row = self.encontrar_obra(obra.id)
+        if not row:
+            raise ValueError("Obra não existe, tente outra.")
+        elif row.quantidade < 0:
+            raise ValueError("Obra não tem estoque, mas existe")
 
         atualizar_quantidade_obra(obra.id, -1)
 
@@ -325,7 +338,7 @@ class Acervo:
         """
 
         def __init__(self, titulo):
-            self.tabela = table(title=titulo, show_lines=True)
+            self.tabela = Table(title=titulo, show_lines=True)
 
         def add_colunas(self, *colunas):
             """

@@ -6,11 +6,11 @@ class BaseEntity:
     Classe base para entidades do sistema com ID único e data de criação.
     """
 
-    def __init__(self):
+    def __init__(self, id=None):
         """
         Inicializa a entidade com um ID único e a data atual como data de criação.
         """
-        self.id = self._gerar_id()
+        self.id = id or self._gerar_id()
         self.data_criacao = datetime.now()
 
     def __eq__(self, other):
@@ -44,7 +44,7 @@ class Obra(BaseEntity):
     Representa uma obra (livro, revista, etc.) disponível para empréstimo.
     """
 
-    def __init__(self, titulo, autor, ano, categoria, quantidade=1):
+    def __init__(self, titulo, autor, ano, categoria, quantidade=1, id=None):
         """
         Inicializa uma obra com título, autor, ano, categoria e quantidade.
 
@@ -54,7 +54,7 @@ class Obra(BaseEntity):
         :param categoria: Categoria da obra.
         :param quantidade: Quantidade disponível (padrão: 1).
         """
-        super().__init__()
+        super().__init__(id=id)
         self.titulo = titulo
         self.autor = autor
         self.ano = ano
@@ -84,7 +84,7 @@ class Usuario(BaseEntity):
     Representa um usuário do sistema de empréstimos.
     """
 
-    def __init__(self, nome, email, divida=0):
+    def __init__(self, nome, email, divida=0, id=None):
         """
         Inicializa um usuário com nome, email e dívida (padrão: 0).
 
@@ -92,7 +92,7 @@ class Usuario(BaseEntity):
         :param email: Email do usuário.
         :param divida: Valor da dívida atual do usuário.
         """
-        super().__init__()
+        super().__init__(id=id)
         self.nome = nome
         self.email = email
         self.divida = divida
@@ -120,7 +120,7 @@ class Emprestimo(BaseEntity):
     Representa um empréstimo de uma obra feito por um usuário.
     """
 
-    def __init__(self, obra, usuario, data_emprestimo, data_prev_dev):
+    def __init__(self, obra, usuario, data_emprestimo, data_prev_dev, id=None):
         """
         Inicializa um empréstimo com obra, usuário, data de empréstimo e data prevista de devolução.
 
@@ -129,7 +129,7 @@ class Emprestimo(BaseEntity):
         :param data_emprestimo: Data em que o empréstimo foi realizado.
         :param data_prev_dev: Data prevista para devolução.
         """
-        super().__init__()
+        super().__init__(id=id)
         self.obra = obra
         self.usuario = usuario
         self.data_emprestimo = data_emprestimo

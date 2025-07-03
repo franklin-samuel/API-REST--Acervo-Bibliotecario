@@ -1,4 +1,6 @@
 import sqlite3
+from models import Obra
+import uuid
 
 def conectar():
     return sqlite3.connect("acervo.db")
@@ -53,17 +55,10 @@ def salvar_usuario(usuario):
 def salvar_obra(obra):
     conn = conectar()
     cursor = conn.cursor()
-    cursor.execute("SELECT quantidade FROM obras WHERE id = ?", (str(obra.id),))
-    resultado = cursor.fetchone()
-
-    if resultado:
-        novo_quantidade = resultado[0] + obra.quantidade
-        cursor.execute("UPDATE obras set quantidade = ? WHERE id = ?", (novo_quantidade, (str(obra.id))))
-    else:
-        cursor.execute("""
-            INSERT INTO obras (id, titulo, autor, ano, categoria, quantidade)
-            values (?, ?, ?, ?, ?, ?)
-            """, (str(obra.id), obra.titulo, obra.autor, obra.ano, obra.categoria, obra.quantidade))
+    cursor.execute("""
+        INSERT INTO obras (id, titulo, autor, ano, categoria, quantidade)
+        values (?, ?, ?, ?, ?, ?)
+        """, (str(obra.id), obra.titulo, obra.autor, obra.ano, obra.categoria, obra.quantidade))
     conn.commit()
     conn.close()
 
@@ -123,16 +118,16 @@ def buscar_usuario(id_usuario):
     conn.close()
     return row
 
-def atualizar_quantidade_obra(obra_id, value):
-    conn = conectar()
+def atualizar_quantidade_obra(obra_id, delta):
+    conn = sqlite3.connect("acervo.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM obras WHERE id = ?", (str(obra_id),))
-    row = cursor.fetchone()
-    if row:
-        new_value = row[0] + value
-        if new_value > 0:
-            cursor.execute("UPDATE obras SET quantidade = ? WHERE id = ?", (new_value, str(obra_id)))
-        else: raise ValueError("Quantidade não pode ser negativa")
+
+    cursor.execute("""
+        UPDATE obras
+        SET quantidade = quantidade + ?
+        WHERE id = ?
+    """, (delta, str(obra_id)))  # delta pode ser positivo ou negativo
+
     conn.commit()
     conn.close()
 
@@ -175,17 +170,42 @@ def buscar_emprestimos_por_usuario(id_usuario):
     cursor.execute("""
         SELECT 
             e.id, 
-            e.id_obra, 
+            e.obra_id, 
             e.data_emprestimo, 
-            e.data_prev_dev, 
+            e.data_prevista, 
             e.data_devolucao,
             o.titulo
         FROM emprestimos e
-        JOIN obras o ON e.id_obra = o.id
-        WHERE e.id_usuario = ?
+        JOIN obras o ON e.obra_id = o.id
+        WHERE e.usuario_id = ?
         ORDER BY e.data_emprestimo DESC
     """, (str(id_usuario),))
 
     resultados = cursor.fetchall()
     conn.close()
     return resultados
+
+def buscar_obra_por_dados(titulo, autor, ano, categoria):
+    conn = sqlite3.connect("acervo.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, titulo, autor, ano, categoria, quantidade FROM obras
+        WHERE titulo = ? AND autor = ? AND ano = ? AND categoria = ?
+    """, (titulo, autor, ano, categoria))
+
+    row = cursor.fetchone()
+    conn.close()
+
+    if row:
+        obra = Obra(titulo=row[1], autor=row[2], ano=row[3], categoria=row[4], quantidade=row[5], id=row[0])
+        return obra
+    return None
+
+def buscar_usuario_por_email(email):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM usuarios WHERE email = ?", (email,))
+    row = cursor.fetchone()
+    conn.close()
+    return row

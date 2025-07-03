@@ -1,7 +1,8 @@
 from models import Usuario, Obra
 from core import Acervo
-from database import salvar_usuario, salvar_emprestimo
+from database import salvar_usuario, salvar_emprestimo, limpar_tabelas, buscar_obra_por_dados
 from datetime import date
+from rich.console import Console
 import time
 
 def executar_demo():
@@ -9,19 +10,28 @@ def executar_demo():
 
     # criar usuario
     usuario = Usuario(nome="Dezmetros", email="basquete@email.com")
-    obra = Obra(titulo="1984", autor="George Orwell", ano=1949, categoria="Ficção", quantidade=2)
-    #adicionar no db
     salvar_usuario(usuario)
+
+    #buscar
+    obra = Obra(titulo="1984", autor="George Orwell", ano=1949, categoria="Ficção", quantidade=4)
     acervo.adicionar(obra)
+
+    # Recuperar do banco para garantir que o ID está sincronizado
+    obra_existente = buscar_obra_por_dados(obra.titulo, obra.autor, obra.ano, obra.categoria)
+    if not obra_existente:
+        raise Exception("Erro ao recuperar obra do banco após adicionar.")
+    obra.id = obra_existente.id
     
     print(f"Usuário cadastrado: {usuario.nome} ({usuario.id})")
     print(f"Obra cadastrada: {obra.titulo} ({obra.id})")
+    print(f"ID esperado: {obra.id}")
+    print(f"Obra encontrada via .encontrar_obra(): {acervo.encontrar_obra(obra.id)}")
+
 
     #emprestar
     emprestimo = acervo.emprestar(obra, usuario, dias=3)
     print(f"\nObra emprestada: {emprestimo.obra.titulo} para {emprestimo.usuario.nome}")
     print(f"Previsão de devolução: {emprestimo.previsao}")
-    salvar_emprestimo(emprestimo)
     
     #buscar os dados
     usuario_encontrado = acervo.encontrar_usuario(str(usuario.id))
@@ -38,14 +48,15 @@ def executar_demo():
     print(f"\nDevolução registrada para o empréstimo ID {emprestimo.id} em {date.today()}")
 
     #relatorios
+    console = Console()
     print("\n=== Inventário Atual ===")
-    print(acervo.relatorio_inventario())
+    console.print(acervo.relatorio_inventario())
 
     print("\n=== Relatório de Débitos ===")
-    print(acervo.relatorio_debitos())
+    console.print(acervo.relatorio_debitos())
 
     print("\n=== Histórico do Usuário ===")
-    print(acervo.historico_usuario(usuario))
+    console.print(acervo.historico_usuario(usuario))
 
 
 executar_demo()
