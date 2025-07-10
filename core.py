@@ -125,7 +125,7 @@ class Acervo:
         if not row:
             raise ValueError("Obra não existe, tente outra.")
         elif row.quantidade < 0:
-            raise ValueError("Obra não tem estoque, mas existe")
+            raise ValueError("Obra não tem estoque")
 
         atualizar_quantidade_obra(obra.id, (row.quantidade - 1))
 
